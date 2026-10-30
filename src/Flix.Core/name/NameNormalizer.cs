@@ -31,6 +31,20 @@ public static class NameNormalizer
         spaced = true;
       }
     }
-    return buffer.ToString().Trim();
+    string normalized = buffer.ToString().Trim();
+    // Repair Latin/Cyrillic look-alike letters inside a token (source typos and
+    // homoglyph evasion). Applied identically to reference and incoming values.
+    string[] tokens = normalized.Split(' ');
+    bool changed = false;
+    for (int i = 0; i < tokens.Length; i++)
+    {
+      string repaired = ScriptHomoglyphs.RepairToken(tokens[i]);
+      if (!ReferenceEquals(repaired, tokens[i]))
+      {
+        tokens[i] = repaired;
+        changed = true;
+      }
+    }
+    return changed ? string.Join(' ', tokens) : normalized;
   }
 }

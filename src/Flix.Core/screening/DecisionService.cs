@@ -250,9 +250,17 @@ public sealed class DecisionService
     string type = FieldNormalization.CanonicalType(field.Type);
     var matches = strategies.Match(snapshot, field);
     RankCandidates(list, field, matches, filter, aiEvidence);
+    // A whitelist releases payments, so it only qualifies on the exact normalized
+    // value. Fuzzy similarity (and token re-ordering, which also scores 1.0) is
+    // evidence for review, never for release. Blacklists keep fuzzy thresholds.
+    bool exactOnly = list is "GLOBAL_WHITELIST" or "TENANT_WHITELIST";
+    string incoming = FieldNormalization.Normalize(type, field.Value);
     foreach (var hit in matches.Names)
     {
-      if (hit.Similarity >= overrides.NameThreshold)
+      bool qualifies = exactOnly
+        ? FieldNormalization.Normalize(type, hit.ReferenceName) == incoming
+        : hit.Similarity >= overrides.NameThreshold;
+      if (qualifies)
       {
         output.Add(new ListFinding(list, hit.PartyId, hit.EntityId,
           hit.SourceId, type, hit.ReferenceName, hit.Similarity));
@@ -260,7 +268,10 @@ public sealed class DecisionService
     }
     foreach (var hit in matches.Fields)
     {
-      if (type != "ADDRESS" || hit.Score >= overrides.AddressThreshold)
+      bool qualifies = exactOnly
+        ? FieldNormalization.Normalize(type, hit.ReferenceValue) == incoming
+        : type != "ADDRESS" || hit.Score >= overrides.AddressThreshold;
+      if (qualifies)
       {
         output.Add(new ListFinding(list, hit.PartyId, hit.EntityId,
           hit.SourceId, type, hit.ReferenceValue, hit.Score));

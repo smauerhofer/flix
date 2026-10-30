@@ -2,7 +2,10 @@ namespace Flix.Core;
 
 public sealed record SecoSpellingVariant(string Value, string? Language = null);
 
-public sealed record SecoNamePart(int Order, string? Value, IReadOnlyList<SecoSpellingVariant> Variants);
+// IsOptional: a part that is not part of the name itself (SECO name-part-type "title",
+// e.g. "General" or "Manager of ..."). It is kept in the published name only.
+public sealed record SecoNamePart(int Order, string? Value, IReadOnlyList<SecoSpellingVariant> Variants,
+  bool IsOptional = false);
 
 public sealed record SecoNameComposition(IReadOnlyList<string> Names, int IncompleteVariantSets);
 
@@ -25,12 +28,19 @@ public static class SecoNameComposer
   public static SecoNameComposition Compose(IReadOnlyList<SecoNamePart> parts)
   {
     ArgumentNullException.ThrowIfNull(parts);
-    var ordered = parts.Select((part, index) => (part, index))
+    var all = parts.Select((part, index) => (part, index))
       .OrderBy(x => x.part.Order).ThenBy(x => x.index)
       .Select(x => x.part)
       .Where(x => !string.IsNullOrWhiteSpace(x.Value) ||
         x.Variants.Any(v => !string.IsNullOrWhiteSpace(v.Value)))
       .ToArray();
+    // Variant names are composed from the real name parts only; a title without a
+    // spelling in another script must not block that script's name.
+    var ordered = all.Where(x => !x.IsOptional).ToArray();
+    if (ordered.Length == 0)
+    {
+      ordered = all;
+    }
     var names = new List<string>();
     var seen = new HashSet<string>(StringComparer.Ordinal);
     void Emit(IEnumerable<string> values)
@@ -42,7 +52,8 @@ public static class SecoNameComposer
       }
     }
 
-    // 1. The primary name exactly as published.
+    // 1. The primary name exactly as published (including titles), then without titles.
+    Emit(all.Where(x => !string.IsNullOrWhiteSpace(x.Value)).Select(x => x.Value!));
     Emit(ordered.Where(x => !string.IsNullOrWhiteSpace(x.Value)).Select(x => x.Value!));
 
     // 2. One name per (script, language) variant set.
@@ -61,7 +72,7 @@ public static class SecoNameComposer
         {
           continue;
         }
-        string script = DetectScript(variant.Value);
+        string script = NormalizedScript(variant.Value);
         if (script == Neutral)
         {
           continue;
@@ -118,14 +129,14 @@ public static class SecoNameComposer
     var variant = part.Variants
       .Where(v => !string.IsNullOrWhiteSpace(v.Value))
       .OrderBy(v => v.Language ?? "", StringComparer.Ordinal)
-      .FirstOrDefault(v => DetectScript(v.Value) == script);
+      .FirstOrDefault(v => NormalizedScript(v.Value) == script);
     if (variant is not null)
     {
       return variant.Value.Trim();
     }
     if (!string.IsNullOrWhiteSpace(part.Value))
     {
-      string primary = DetectScript(part.Value);
+      string primary = NormalizedScript(part.Value);
       if (primary == script || primary == Neutral)
       {
         return part.Value.Trim();
@@ -133,6 +144,11 @@ public static class SecoNameComposer
     }
     return null;
   }
+
+  // Script after NameNormalizer, which repairs Latin/Cyrillic look-alike letters
+  // (SECO contains e.g. "АНАНIЧ" with a Latin I). Grouping on the raw value would
+  // split such a variant from the rest of its set.
+  public static string NormalizedScript(string value) => DetectScript(NameNormalizer.Normalize(value));
 
   // Script of all letters in the value: LATIN, CYRILLIC, ARABIC, ..., NEUTRAL when it
   // contains no letters, MIXED when letters of more than one script occur.

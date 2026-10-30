@@ -11,7 +11,7 @@ public sealed class NameIndexBuilder : IDisposable
 {
   private readonly FSDirectory _directory;
   // Bump whenever indexed fields or their tokenization change; snapshots must be rebuilt.
-  public const string AlgorithmVersion = "hybrid-name-v2";
+  public const string AlgorithmVersion = "hybrid-name-v3";
 
   private readonly Analyzer _analyzer;
   private readonly IndexWriter _writer;

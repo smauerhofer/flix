@@ -9,8 +9,9 @@ public sealed record FilterParameters
   public string Root { get; init; } = "../../flix-data";
   public double NameReviewThreshold { get; init; } = 0.82;
   public double AddressReviewThreshold { get; init; } = 0.90;
-  public bool WhitelistOverridesAll { get; init; } = true;
-  public ListPrecedence ListPrecedence { get; init; } = ListPrecedence.WhitelistFirst;
+  // Safe defaults: a whitelist never overrides a blacklist hit unless explicitly configured.
+  public bool WhitelistOverridesAll { get; init; } = false;
+  public ListPrecedence ListPrecedence { get; init; } = ListPrecedence.BlacklistFirst;
   public double ListNameThreshold { get; init; } = 0.92;
   public double ListAddressThreshold { get; init; } = 0.95;
 

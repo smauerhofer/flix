@@ -45,6 +45,9 @@ namespace Flix.Api
       builder.Services.AddSingleton<ScreeningStrategyRegistry>();
       builder.Services.AddSingleton<DecisionService>();
       builder.Services.AddSingleton(new AuditJournal(root));
+      // One shared writer for review hits; concurrent REVIEW results must not
+      // open hits.jsonl in parallel (sharing violation -> 503 under load).
+      builder.Services.AddSingleton(new HitCaseJournal(Path.Combine(root, "review", "hits.jsonl")));
       builder.Services.AddHostedService(sp => new SnapshotManagementService(
         sp.GetRequiredService<FilterManager>(), root, configurationFile,
         builder.Environment.ContentRootPath,
@@ -77,7 +80,7 @@ namespace Flix.Api
     }
 
     private static IResult Screen(ScreeningRequest request,
-      DecisionService service, AuditJournal journal,
+      DecisionService service, AuditJournal journal, HitCaseJournal hits,
       ILogger<Program> logger)
     {
       try
@@ -86,8 +89,7 @@ namespace Flix.Api
         journal.Append(decision);
         if (!decision.ReleaseAllowed)
         {
-          HitCaseFile.Append(Path.Combine(journal.Root, "review", "hits.jsonl"),
-            new HitCase { Message = request, Decision = decision });
+          hits.Append(new HitCase { Message = request, Decision = decision });
         }
         return Results.Ok(decision);
       }

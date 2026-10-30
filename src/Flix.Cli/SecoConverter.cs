@@ -75,10 +75,11 @@ public static class SecoConverter
                   (int?)part.Attribute("order") ?? 0,
                   (string?)part.Element("value"),
                   part.Elements("spelling-variant").Select(variant => new SecoSpellingVariant(
-                    (string?)variant ?? "",
+                    variant.Value,
                     (string?)variant.Attribute("lang") ??
                     (string?)variant.Attribute("language") ??
-                    (string?)variant.Attribute(XNamespace.Xml + "lang"))).ToArray())).ToArray();
+                    (string?)variant.Attribute(XNamespace.Xml + "lang"))).ToArray(),
+                  (string?)part.Attribute("name-part-type") == "title")).ToArray();
                 SecoNameComposition composition = SecoNameComposer.Compose(parts);
                 incompleteVariantSets += composition.IncompleteVariantSets;
                 foreach (string fullName in composition.Names)

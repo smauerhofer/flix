@@ -19,7 +19,7 @@ public static class HitCaseFile
 
     var cases = new List<HitCase>();
     var ids = new HashSet<string>(StringComparer.Ordinal);
-    foreach (string line in File.ReadLines(path))
+    foreach (string line in ReadCompleteLines(path))
     {
       if (string.IsNullOrWhiteSpace(line))
       {
@@ -48,7 +48,15 @@ public static class HitCaseFile
     return cases;
   }
 
+  // Single, occasional writes only (tools, tests). The API uses HitCaseJournal,
+  // which serializes concurrent writers on one open stream.
   public static void Append(string path, HitCase hit)
+  {
+    Validate(hit);
+    JsonLineJournal.Append(path, hit);
+  }
+
+  public static void Validate(HitCase hit)
   {
     if (hit.Message is null || hit.Decision is null ||
         hit.Message.MessageId != hit.Decision.MessageId ||
@@ -56,6 +64,25 @@ public static class HitCaseFile
     {
       throw new InvalidDataException("Invalid hit.");
     }
-    JsonLineJournal.Append(path, hit);
+  }
+
+  // Opens with FileShare.ReadWrite so the file can be read while the API keeps its
+  // HitCaseJournal stream open. A last line without '\n' is still being written
+  // and is skipped; it is read on the next refresh.
+  private static IEnumerable<string> ReadCompleteLines(string path)
+  {
+    using var stream = new FileStream(path, FileMode.Open, FileAccess.Read,
+      FileShare.ReadWrite | FileShare.Delete);
+    using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
+    string content = reader.ReadToEnd();
+    int end = content.LastIndexOf('\n');
+    if (end < 0)
+    {
+      yield break;
+    }
+    foreach (string line in content[..end].Split('\n'))
+    {
+      yield return line.TrimEnd('\r');
+    }
   }
 }

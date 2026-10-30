@@ -1,8 +1,11 @@
 Root: ../../flix-data
 NameReviewThreshold: 0.82
 AddressReviewThreshold: 0.90
-WhitelistOverridesAll: true
-ListPrecedence: WhitelistFirst
+# A whitelist never overrides a blacklist hit with these settings. Setting
+# WhitelistOverridesAll: true or ListPrecedence: WhitelistFirst lets it do so.
+WhitelistOverridesAll: false
+ListPrecedence: BlacklistFirst
+# Blacklist name/address thresholds. Whitelists always require the exact normalized value.
 ListNameThreshold: 0.92
 ListAddressThreshold: 0.95
 
