@@ -1,0 +1,16 @@
+Root: ../../flix-data
+NameReviewThreshold: 0.82
+AddressReviewThreshold: 0.90
+WhitelistOverridesAll: true
+ListPrecedence: WhitelistFirst
+ListNameThreshold: 0.92
+ListAddressThreshold: 0.95
+
+# Local AI reranking (disabled until a compatible ONNX model is supplied).
+AI:
+  Enabled: false
+  ModelPath: ""
+  ModelVersion: ""
+  MaxCandidatesPerField: 100
+  RankingWeight: 0.30
+  MinimumConfidence: 0.70

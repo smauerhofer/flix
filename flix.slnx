@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Flix.Core/Flix.Core.csproj" />
+    <Project Path="src/Flix.Api/Flix.Api.csproj" />
+    <Project Path="src/Flix.Cli/Flix.Cli.csproj" />
+    <Project Path="src/Flix.ListManager/Flix.ListManager.csproj" />
+    <Project Path="src/Flix.HitReviewer/Flix.HitReviewer.csproj" />
+    <Project Path="src/Flix.EvaluationInspector/Flix.EvaluationInspector.csproj" />
+    <Project Path="src/Flix.Optimizer.Library/Flix.Optimizer.Library.csproj" />
+    <Project Path="src/Flix.Optimizer/Flix.Optimizer.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Flix.SmokeTests/Flix.SmokeTests.csproj" />
+    <Project Path="tests/Flix.RegressionTests/Flix.RegressionTests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,7 @@
+Root: ../../flix-data
+NameReviewThreshold: 0.50
+AddressReviewThreshold: 0.50
+WhitelistOverridesAll: true
+ListPrecedence: WhitelistFirst
+ListNameThreshold: 0.50
+ListAddressThreshold: 0.50
