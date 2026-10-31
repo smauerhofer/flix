@@ -124,12 +124,12 @@ public sealed class LuceneNameMatcher
         .Take(_options.FinalCandidateLimit)
         .ToDictionary(x => x.Key, x => x.Value);
     }
-    var exact = exactHits.Select(hit => ToMatch(snapshot, partyId, name, type, hit.Doc, hit.Score));
-    var fuzzy = documents
+    var exactMatches = exactHits.Select(hit => ToMatch(snapshot, partyId, name, type, hit.Doc, hit.Score));
+    var fuzzyMatches = documents
       .Select(entry => ToMatch(snapshot, partyId, name, type, entry.Key, entry.Value))
       .OrderByDescending(x => x.Similarity)
       .Take(limit);
-    return exact.Concat(fuzzy)
+    return exactMatches.Concat(fuzzyMatches)
       .OrderByDescending(x => x.Similarity)
       .ToArray();
   }
